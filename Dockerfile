@@ -86,9 +86,12 @@ COPY --from=asset-builder /app/public/build ./public/build
 RUN composer dump-autoload --optimize --no-dev
 
 # Set permissions agar folder aplikasi, nginx, dan supervisor bisa diakses user non-root
-RUN chown -R $user:www-data /var/www /var/log/nginx /var/lib/nginx /run \
-    && chmod -R 775 /var/www/storage \
-    && chmod -R 775 /var/www/bootstrap/cache
+# Set permissions agar folder aplikasi, nginx, dan storage bisa diakses dan dibaca oleh Nginx
+RUN chown -R $user:www-data /var/www \
+    && chown -R $user:www-data /var/log/nginx /var/lib/nginx /run /var/log/supervisor || true \
+    && chmod -R 777 /var/log/nginx /var/lib/nginx /run \
+    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache \
+    && chmod -R 755 /var/www/public
 
 USER $user
 
@@ -96,4 +99,5 @@ USER $user
 EXPOSE 7860
 
 # Jalankan Nginx dan PHP-FPM bersamaan lewat Supervisor
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+# Membuat symlink storage terlebih dahulu, baru menyalakan Supervisor
+CMD php artisan storage:link --force || true && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
