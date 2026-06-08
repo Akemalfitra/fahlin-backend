@@ -1,5 +1,5 @@
 # Stage 1: Build Assets with Node.js
-FROM node:20-alpine as asset-builder
+FROM node:20-alpine AS asset-builder
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
@@ -13,7 +13,7 @@ FROM php:8.2-fpm
 ARG user=laravel
 ARG uid=1000
 
-# Install system dependencies
+# Install system dependencies (Ditambahkan libicu-dev untuk ekstensi intl)
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -24,14 +24,16 @@ RUN apt-get update && apt-get install -y \
     unzip \
     libzip-dev \
     libjpeg-dev \
-    libfreetype6-dev
+    libfreetype6-dev \
+    libicu-dev
 
 # Clear cache
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Install PHP extensions
+# Install PHP extensions (Ditambahkan intl di baris ini)
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+    && docker-php-ext-configure intl \
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip intl
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -44,10 +46,10 @@ RUN mkdir -p /home/$user/.composer && \
 # Set working directory
 WORKDIR /var/www
 
-# KOREKSI: Salin file composer terlebih dahulu untuk optimasi cache layer Docker
+# Salin file composer terlebih dahulu untuk optimasi cache layer Docker
 COPY composer.json composer.lock ./
 
-# KOREKSI: Jalankan composer install sebagai root terlebih dahulu agar tidak terkendala permission cache folder
+# Jalankan composer install sebagai root terlebih dahulu agar tidak terkendala permission cache folder
 RUN composer install --no-interaction --no-plugins --no-scripts --optimize-autoloader --no-dev --prefer-dist
 
 # Copy seluruh source code aplikasi
@@ -56,7 +58,7 @@ COPY . .
 # Copy built assets dari Stage 1
 COPY --from=asset-builder /app/public/build ./public/build
 
-# KOREKSI: Jalankan ulang untuk men-generate ulang autoloaders karena file aplikasi baru saja masuk
+# Jalankan ulang untuk men-generate ulang autoloaders karena file aplikasi baru saja masuk
 RUN composer dump-autoload --optimize --no-dev
 
 # Set permissions agar folder storage & cache bisa ditulis oleh server
