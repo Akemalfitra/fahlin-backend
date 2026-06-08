@@ -63,13 +63,17 @@ class UserAddressController extends Controller
         ], 201);
     }
 
-    public function update(Request $request, UserAddress $address): JsonResponse
+    public function update(Request $request, $id): JsonResponse
     {
-        if ($address->user_id !== $request->user()->id) {
+        $address = UserAddress::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        if (!$address) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized.',
-            ], 403);
+                'message' => 'Alamat tidak ditemukan.',
+            ], 404);
         }
 
         $validated = $request->validate([
@@ -108,13 +112,17 @@ class UserAddressController extends Controller
         ]);
     }
 
-    public function destroy(Request $request, UserAddress $address): JsonResponse
+    public function destroy(Request $request, $id): JsonResponse
     {
-        if ($address->user_id !== $request->user()->id) {
+        $address = UserAddress::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        if (!$address) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized.',
-            ], 403);
+                'message' => 'Alamat tidak ditemukan.',
+            ], 404);
         }
 
         $address->delete();
@@ -125,13 +133,17 @@ class UserAddressController extends Controller
         ]);
     }
 
-    public function setDefault(Request $request, UserAddress $address): JsonResponse
+    public function setDefault(Request $request, $id): JsonResponse
     {
-        if ($address->user_id !== $request->user()->id) {
+        $address = UserAddress::where('id', $id)
+            ->where('user_id', $request->user()->id)
+            ->first();
+
+        if (!$address) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Unauthorized.',
-            ], 403);
+                'message' => 'Alamat tidak ditemukan.',
+            ], 404);
         }
 
         $request->user()->addresses()->update(['is_default' => false]);

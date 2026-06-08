@@ -7,7 +7,7 @@ use InvalidArgumentException;
 
 class ShippingCalculator
 {
-    public function calculate(float $customerLatitude, float $customerLongitude, ?string $province = null): array
+    public function calculate(?float $customerLatitude, ?float $customerLongitude, ?string $province = null): array
     {
         $setting = ShippingSetting::active();
 
@@ -15,20 +15,18 @@ class ShippingCalculator
             throw new InvalidArgumentException('Lokasi toko belum diatur di admin.');
         }
 
-        $distance = $this->distanceInKilometers(
-            (float) $setting->store_latitude,
-            (float) $setting->store_longitude,
-            $customerLatitude,
-            $customerLongitude,
-        );
+        $distance = null;
+        if ($customerLatitude !== null && $customerLongitude !== null) {
+            $distance = $this->distanceInKilometers(
+                (float) $setting->store_latitude,
+                (float) $setting->store_longitude,
+                $customerLatitude,
+                $customerLongitude,
+            );
+        }
 
-        $maxRadius = (float) $setting->max_radius;
-        
-        // Local is <= 50 KM AND within max radius (if max radius is set > 0)
-        $isLocal = $distance <= 50;
-        
-        // If it's local
-        if ($isLocal) {
+        // If it's local (only if we have distance)
+        if ($distance !== null && $distance <= 50) {
             $freeDistance = (float) $setting->free_distance;
             $chargeableDistance = max(0, $distance - $freeDistance);
             
@@ -53,23 +51,28 @@ class ShippingCalculator
             ];
         }
 
-        // If outside local ( > 50 KM )
+        // If outside local or no coordinates
         if (!$province) {
             return [
-                'distance_km' => round($distance, 2),
+                'distance_km' => $distance ? round($distance, 2) : 0,
                 'shipping_type' => 'inter_province',
                 'is_available' => false,
-                'message' => 'Provinsi diperlukan untuk menghitung ongkir luar daerah.',
+                'message' => 'Provinsi diperlukan untuk menghitung ongkir.',
             ];
         }
 
+        return $this->calculateProvinceShipping($province, $distance);
+    }
+
+    private function calculateProvinceShipping(string $province, ?float $distance): array
+    {
         $provinceRate = \App\Models\ProvinceShippingRate::where('province_name', 'like', "%$province%")
             ->where('is_active', true)
             ->first();
 
         if (!$provinceRate) {
             return [
-                'distance_km' => round($distance, 2),
+                'distance_km' => $distance ? round($distance, 2) : 0,
                 'shipping_type' => 'inter_province',
                 'is_available' => false,
                 'message' => "Maaf, pengiriman ke provinsi $province belum tersedia.",
@@ -77,7 +80,7 @@ class ShippingCalculator
         }
 
         return [
-            'distance_km' => round($distance, 2),
+            'distance_km' => $distance ? round($distance, 2) : 0,
             'shipping_type' => 'inter_province',
             'is_available' => true,
             'message' => 'Ongkir antar provinsi berhasil didapatkan.',
