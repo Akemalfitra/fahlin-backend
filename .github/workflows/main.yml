@@ -27,7 +27,7 @@ jobs:
     - name: Build and push
       uses: docker/build-push-action@v5
       with:
-        context: ./fahlin-backend
+        context: .
         push: true
         tags: |
           ${{ secrets.DOCKERHUB_USERNAME }}/fahlin-backend:latest
