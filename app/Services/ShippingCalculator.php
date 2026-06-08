@@ -53,11 +53,20 @@ class ShippingCalculator
 
         // If outside local or no coordinates
         if (!$province) {
+            // FALLBACK: Jika provinsi tidak ada, berikan ongkir flat agar tidak memblokir checkout
             return [
                 'distance_km' => $distance ? round($distance, 2) : 0,
                 'shipping_type' => 'inter_province',
-                'is_available' => false,
-                'message' => 'Provinsi diperlukan untuk menghitung ongkir.',
+                'shipping_fee' => 30000, // Tarif flat cadangan
+                'is_available' => true,
+                'message' => 'Menggunakan tarif ekspedisi standar.',
+                'couriers' => [
+                    [
+                        'code' => 'reguler',
+                        'name' => 'Ekspedisi Standar',
+                        'rate' => 30000,
+                    ]
+                ]
             ];
         }
 
