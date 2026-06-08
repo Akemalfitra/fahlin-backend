@@ -31,6 +31,19 @@ class ProductResource extends Resource
                             ->maxLength(255)
                             ->placeholder('Contoh: Luna Pearl Dream Strap'),
 
+                        Forms\Components\Select::make('category_id')
+                            ->label('Kategori')
+                            ->relationship('category', 'name')
+                            ->searchable()
+                            ->preload()
+                            ->required()
+                            ->createOptionForm([
+                                Forms\Components\TextInput::make('name')
+                                    ->label('Nama Kategori')
+                                    ->required()
+                                    ->maxLength(255),
+                            ]),
+
                         Forms\Components\TextInput::make('price')
                             ->label('Harga')
                             ->numeric()
@@ -99,6 +112,12 @@ class ProductResource extends Resource
                     ->searchable() // Bisa dicari berdasarkan nama
                     ->sortable(),
 
+                Tables\Columns\TextColumn::make('category.name')
+                    ->label('Kategori')
+                    ->badge()
+                    ->sortable()
+                    ->searchable(),
+
                 Tables\Columns\TextColumn::make('price')
                     ->label('Harga')
                     ->formatStateUsing(fn ($state): string => 'Rp ' . number_format((float) $state, 0, ',', '.'))
@@ -119,7 +138,9 @@ class ProductResource extends Resource
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('category_id')
+                    ->label('Kategori')
+                    ->relationship('category', 'name'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),

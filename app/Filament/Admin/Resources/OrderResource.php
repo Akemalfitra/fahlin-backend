@@ -71,6 +71,14 @@ class OrderResource extends Resource
                         Forms\Components\TextInput::make('delivery_longitude')
                             ->label('Longitude')
                             ->numeric(),
+                        Forms\Components\TextInput::make('shipping_distance_km')
+                            ->label('Jarak Pengiriman')
+                            ->suffix('KM')
+                            ->disabled(),
+                        Forms\Components\TextInput::make('shipping_fee')
+                            ->label('Ongkir')
+                            ->prefix('Rp')
+                            ->disabled(),
                     ])
                     ->columns(2),
             ]);
@@ -85,6 +93,10 @@ class OrderResource extends Resource
                     ->label('Nomor')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('customer_email')
+                    ->label('Email User')
+                    ->searchable()
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('recipient_name')
                     ->label('Penerima')
                     ->searchable()
@@ -96,6 +108,9 @@ class OrderResource extends Resource
                 Tables\Columns\TextColumn::make('total')
                     ->label('Total')
                     ->formatStateUsing(fn ($state): string => 'Rp ' . number_format((float) $state, 0, ',', '.'))
+                    ->sortable(),
+                Tables\Columns\TextColumn::make('payment_method')
+                    ->label('Metode')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('status')
                     ->badge()

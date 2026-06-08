@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
 {
     protected $fillable = [
+        'category_id',
         'name',
         'price',
         'image',
@@ -19,6 +21,11 @@ class Product extends Model
     protected $casts = [
         'images' => 'array',
     ];
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(Category::class);
+    }
 
     public function productImages(): HasMany
     {
