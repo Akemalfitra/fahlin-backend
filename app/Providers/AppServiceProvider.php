@@ -23,7 +23,8 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\Product::observe(\App\Observers\ProductObserver::class);
         \App\Models\Voucher::observe(\App\Observers\VoucherObserver::class);
         \App\Models\Announcement::observe(\App\Observers\AnnouncementObserver::class);
-        if (config('app.env') === 'production' || env('APP_ENV') === 'local') {
+    // Hanya paksa HTTPS jika ENV aplikasi diset ke production
+        if (config('app.env') === 'production') {
             URL::forceScheme('https');
         }
     }
