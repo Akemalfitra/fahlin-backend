@@ -44,17 +44,25 @@ RUN mkdir -p /home/$user/.composer && \
 # Set working directory
 WORKDIR /var/www
 
-# Copy existing application directory contents
+# KOREKSI: Salin file composer terlebih dahulu untuk optimasi cache layer Docker
+COPY composer.json composer.lock ./
+
+# KOREKSI: Jalankan composer install sebagai root terlebih dahulu agar tidak terkendala permission cache folder
+RUN composer install --no-interaction --no-plugins --no-scripts --optimize-autoloader --no-dev --prefer-dist
+
+# Copy seluruh source code aplikasi
 COPY . .
 
-# Copy built assets from Stage 1
+# Copy built assets dari Stage 1
 COPY --from=asset-builder /app/public/build ./public/build
 
-# Install composer dependencies
-RUN composer install --no-interaction --optimize-autoloader --no-dev
+# KOREKSI: Jalankan ulang untuk men-generate ulang autoloaders karena file aplikasi baru saja masuk
+RUN composer dump-autoload --optimize --no-dev
 
-# Set permissions
-RUN chown -R $user:www-data /var/www/storage /var/www/bootstrap/cache
+# Set permissions agar folder storage & cache bisa ditulis oleh server
+RUN chown -R $user:www-data /var/www \
+    && chmod -R 775 /var/www/storage \
+    && chmod -R 775 /var/www/bootstrap/cache
 
 USER $user
 
