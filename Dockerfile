@@ -85,13 +85,11 @@ COPY --from=asset-builder /app/public/build ./public/build
 # Jalankan ulang untuk men-generate ulang autoloaders
 RUN composer dump-autoload --optimize --no-dev
 
-# Set permissions agar folder aplikasi, nginx, dan supervisor bisa diakses user non-root
-# Set permissions agar folder aplikasi, nginx, dan storage bisa diakses dan dibaca oleh Nginx
-RUN chown -R $user:www-data /var/www \
-    && chown -R $user:www-data /var/log/nginx /var/lib/nginx /run /var/log/supervisor || true \
-    && chmod -R 777 /var/log/nginx /var/lib/nginx /run \
-    && chmod -R 775 /var/www/storage /var/www/bootstrap/cache \
-    && chmod -R 755 /var/www/public
+# Hapus symlink lama jika ada, buat baru dengan mode relatif, perbaiki izin folder, lalu jalankan Supervisor
+CMD php artisan storage:unlink || true \
+    && php artisan storage:link --relative \
+    && chmod -R 775 /var/www/storage/app/public \
+    && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
 
 USER $user
 
