@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -22,6 +23,9 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\Product::observe(\App\Observers\ProductObserver::class);
         \App\Models\Voucher::observe(\App\Observers\VoucherObserver::class);
         \App\Models\Announcement::observe(\App\Observers\AnnouncementObserver::class);
+        if (config('app.env') === 'production' || env('APP_ENV') === 'local') {
+            URL::forceScheme('https');
+        }
     }
     
 }
