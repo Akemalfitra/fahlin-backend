@@ -77,7 +77,7 @@ COPY composer.json composer.lock ./
 # Jalankan composer install sebagai root terlebih dahulu agar tidak terkendala permission cache folder
 RUN composer install --no-interaction --no-plugins --no-scripts --optimize-autoloader --no-dev --prefer-dist
 
-# Copy seluruh source code aplikasi
+# Copy seluruh source code aplikasi (Termasuk folder storage yang sudah lolos gitignore)
 COPY . .
 
 # Copy built assets dari Stage 1
@@ -94,13 +94,14 @@ RUN chown -R $user:www-data /var/www \
     && chmod -R 777 /var/www/storage /var/www/bootstrap/cache \
     && chmod -R 755 /var/www/public /run
 
-USER $user
+# PERBAIKAN 1: Menulis konfigurasi upload PHP dengan aman tanpa printf / \n
+RUN echo "upload_max_filesize=100M" > /usr/local/etc/php/conf.d/uploads.ini
+RUN echo "post_max_size=100M" >> /usr/local/etc/php/conf.d/uploads.ini
 
-# Naikkan batas upload file di sisi PHP-FPM ke 100MB untuk menampung buffer Livewire
-RUN printf "upload_max_filesize=100M\npost_max_size=100M\n" > /usr/local/etc/php/conf.d/uploads.ini
+USER $user
 
 # Ekspos port 7860 untuk Hugging Face (Nginx listen ke port ini)
 EXPOSE 7860
 
-# Jalankan manajemen symlink bawaan Laravel secara relatif, lalu nyalakan Supervisor
-CMD ["/bin/sh", "-c", "php artisan storage:unlink || true; php artisan storage:link --relative; /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
+# PERBAIKAN 2: Menggunakan tautan link standar bawaan Laravel (--force) tanpa flag --relative
+CMD ["/bin/sh", "-c", "php artisan storage:unlink || true; php artisan storage:link --force || true; /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
