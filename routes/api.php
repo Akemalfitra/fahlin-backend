@@ -125,8 +125,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/vouchers/{voucher}/claim', [VoucherController::class, 'claim']);
     Route::get('/user/addresses', [UserAddressController::class, 'index']);
     Route::post('/user/addresses', [UserAddressController::class, 'store']);
-    Route::put('/user/addresses/{address}', [UserAddressController::class, 'update']);
-    Route::delete('/user/addresses/{address}', [UserAddressController::class, 'destroy']);
+    Route::match(['put', 'post'], '/user/addresses/{address}', [UserAddressController::class, 'update']);
+    Route::match(['delete', 'post'], '/user/addresses/{id}', [UserAddressController::class, 'destroy'])
+        ->where('id', '[0-9]+'); // Ensure it doesn't collide with store
     Route::post('/user/addresses/{address}/set-default', [UserAddressController::class, 'setDefault']);
     
     // Notifications
