@@ -96,6 +96,9 @@ RUN chown -R $user:www-data /var/www \
 
 USER $user
 
+# Naikkan batas upload file di sisi PHP-FPM ke 100MB untuk menampung buffer Livewire
+RUN echo "upload_max_filesize=100M\npost_max_size=100M" > /usr/local/etc/php/conf.d/uploads.ini
+
 # Ekspos port 7860 untuk Hugging Face (Nginx listen ke port ini)
 EXPOSE 7860
 
