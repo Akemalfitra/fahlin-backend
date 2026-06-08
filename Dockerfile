@@ -99,6 +99,5 @@ USER $user
 # Ekspos port 7860 untuk Hugging Face (Nginx listen ke port ini)
 EXPOSE 7860
 
-# Jalankan Nginx dan PHP-FPM bersamaan lewat Supervisor
-# Membuat symlink storage terlebih dahulu, baru menyalakan Supervisor
-CMD php artisan storage:link --force || true && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+# Jalankan manajemen symlink bawaan Laravel secara relatif, lalu nyalakan Supervisor
+CMD ["/bin/sh", "-c", "php artisan storage:unlink || true; php artisan storage:link --relative; /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
