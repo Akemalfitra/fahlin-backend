@@ -55,6 +55,7 @@ RUN echo '[supervisord]\n\
 nodaemon=true\n\
 user=laravel\n\
 pidfile=/run/supervisord.pid\n\
+logfile=/run/supervisord.log\n\
 \n\
 [program:php-fpm]\n\
 command=php-fpm\n\
@@ -85,11 +86,13 @@ COPY --from=asset-builder /app/public/build ./public/build
 # Jalankan ulang untuk men-generate ulang autoloaders
 RUN composer dump-autoload --optimize --no-dev
 
-# Hapus symlink lama jika ada, buat baru dengan mode relatif, perbaiki izin folder, lalu jalankan Supervisor
-CMD php artisan storage:unlink || true \
-    && php artisan storage:link --relative \
-    && chmod -R 775 /var/www/storage/app/public \
-    && /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf
+# Set permissions menyeluruh agar folder aplikasi dan semua log bisa ditulis oleh user biasa
+RUN chown -R $user:www-data /var/www \
+    && chown -R $user:www-data /var/log/nginx /var/lib/nginx /run /var/log/supervisor || true \
+    && touch /var/www/storage/logs/laravel.log || true \
+    && chown $user:www-data /var/www/storage/logs/laravel.log \
+    && chmod -R 777 /var/www/storage /var/www/bootstrap/cache \
+    && chmod -R 755 /var/www/public /run
 
 USER $user
 
