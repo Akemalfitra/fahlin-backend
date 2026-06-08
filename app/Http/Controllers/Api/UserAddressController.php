@@ -105,13 +105,17 @@ class UserAddressController extends Controller
             $request->user()->addresses()->update(['is_default' => false]);
         }
 
-        // Filter out fields that might cause "Column not found" if they are null
-        $saveData = array_filter($validated, function ($value) {
-            return $value !== null;
-        });
+        // --- CARA SAKTI: Hanya simpan kolom yang BENAR-BENAR ada di database ---
+        $table = $address->getTable();
+        $safeData = [];
+        foreach ($validated as $key => $value) {
+            if (\Illuminate\Support\Facades\Schema::hasColumn($table, $key)) {
+                $safeData[$key] = $value;
+            }
+        }
 
         $address->update([
-            ...$saveData,
+            ...$safeData,
             'is_default' => $isDefault,
         ]);
 
@@ -163,5 +167,8 @@ class UserAddressController extends Controller
             'status' => 'success',
             'message' => 'Alamat utama berhasil diperbarui.',
         ]);
+    }
+}
+);
     }
 }
