@@ -40,60 +40,58 @@ class OrderController extends Controller
      */
     public function store(Request $request, ShippingCalculator $shippingCalculator): JsonResponse
     {
-        $validated = $request->validate([
-            'order_number' => 'nullable|string|max:255', // Removed unique to allow client-side ORD- IDs
-            'customer_email' => 'nullable|email|max:255',
-            'status' => 'nullable|string|max:120',
-            'payment_method' => 'nullable|string|max:120',
-            'products' => 'required|array|min:1',
-            'subtotal' => 'required|integer|min:0',
-            'shipping_fee' => 'nullable|integer|min:0',
-            'shipping_distance_km' => 'nullable|numeric|min:0',
-            'shipping_courier' => 'nullable|string',
-            'shipping_type' => 'nullable|string',
-            'discount' => 'nullable|integer|min:0',
-            'voucher_code' => 'nullable|string|max:120',
-            'voucher_title' => 'nullable|string|max:255',
-            'recipient_name' => 'nullable|string|max:255',
-            'recipient_phone' => 'nullable|string|max:50',
-            'address_label' => 'required|string|max:120',
-            'address_detail' => 'required|string',
-            'address_province' => 'nullable|string',
-            'delivery_latitude' => 'nullable|numeric|between:-90,90',
-            'delivery_longitude' => 'nullable|numeric|between:-180,180',
-        ]);
+        try {
+            $validated = $request->validate([
+                'order_number' => 'nullable|string|max:255',
+                'customer_email' => 'nullable|email|max:255',
+                'status' => 'nullable|string|max:120',
+                'payment_method' => 'nullable|string|max:120',
+                'products' => 'required|array|min:1',
+                'subtotal' => 'required|integer|min:0',
+                'shipping_fee' => 'nullable|integer|min:0',
+                'shipping_distance_km' => 'nullable|numeric|min:0',
+                'shipping_courier' => 'nullable|string',
+                'shipping_type' => 'nullable|string',
+                'discount' => 'nullable|integer|min:0',
+                'voucher_code' => 'nullable|string|max:120',
+                'voucher_title' => 'nullable|string|max:255',
+                'recipient_name' => 'nullable|string|max:255',
+                'recipient_phone' => 'nullable|string|max:50',
+                'address_label' => 'required|string|max:120',
+                'address_detail' => 'required|string',
+                'address_province' => 'nullable|string',
+                'delivery_latitude' => 'nullable|numeric|between:-90,90',
+                'delivery_longitude' => 'nullable|numeric|between:-180,180',
+            ]);
 
-        $email = $request->user()?->email ?? $validated['customer_email'] ?? null;
+            $email = $request->user()?->email ?? $validated['customer_email'] ?? null;
 
-        $discount = (int) ($validated['discount'] ?? 0);
-        $shippingFee = (int) ($validated['shipping_fee'] ?? 0);
-        $shippingDistance = $validated['shipping_distance_km'] ?? null;
-        $shippingCourier = $validated['shipping_courier'] ?? null;
-        $shippingType = $validated['shipping_type'] ?? null;
+            $discount = (int) ($validated['discount'] ?? 0);
+            $shippingFee = (int) ($validated['shipping_fee'] ?? 0);
+            $shippingDistance = $validated['shipping_distance_km'] ?? null;
+            $shippingCourier = $validated['shipping_courier'] ?? null;
+            $shippingType = $validated['shipping_type'] ?? null;
 
-        if (($validated['delivery_latitude'] ?? null) !== null && ($validated['delivery_longitude'] ?? null) !== null) {
-            $shipping = $shippingCalculator->calculate(
-                (float) $validated['delivery_latitude'],
-                (float) $validated['delivery_longitude'],
-                $validated['address_province'] ?? null
-            );
+            if (($validated['delivery_latitude'] ?? null) !== null && ($validated['delivery_longitude'] ?? null) !== null) {
+                $shipping = $shippingCalculator->calculate(
+                    (float) $validated['delivery_latitude'],
+                    (float) $validated['delivery_longitude'],
+                    $validated['address_province'] ?? null
+                );
 
-            if ($shipping['is_available']) {
-                if ($shipping['shipping_type'] === 'local') {
-                    $shippingFee = (int) $shipping['shipping_fee'];
-                    $shippingCourier = 'Lokal';
-                    $shippingType = 'local';
+                if ($shipping['is_available']) {
+                    if ($shipping['shipping_type'] === 'local') {
+                        $shippingFee = (int) $shipping['shipping_fee'];
+                        $shippingCourier = 'Lokal';
+                        $shippingType = 'local';
+                    }
+                    $shippingDistance = $shipping['distance_km'];
                 }
-                $shippingDistance = $shipping['distance_km'];
             }
-        }
 
-        $orderNumber = $validated['order_number'] ?? 'ORD-' . now()->format('YmdHis') . '-' . random_int(100, 999);
+            $orderNumber = $validated['order_number'] ?? 'ORD-' . now()->format('YmdHis') . '-' . random_int(100, 999);
 
-        $order = Order::query()->updateOrCreate(
-            ['order_number' => $orderNumber],
-            [
-                ...$validated,
+            $saveData = [
                 'customer_email' => $email,
                 'status' => $validated['status'] ?? 'Menunggu Pembayaran',
                 'shipping_fee' => $shippingFee,
@@ -102,14 +100,35 @@ class OrderController extends Controller
                 'shipping_type' => $shippingType,
                 'discount' => $discount,
                 'total' => (int) $validated['subtotal'] + $shippingFee - $discount,
-            ]
-        );
+            ];
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Pesanan berhasil disimpan.',
-            'data' => $order,
-        ], 201);
+            // Filter out fields that don't exist in the database yet
+            $table = (new Order())->getTable();
+            $finalData = [];
+            foreach (array_merge($validated, $saveData) as $key => $value) {
+                if (\Illuminate\Support\Facades\Schema::hasColumn($table, $key)) {
+                    $finalData[$key] = $value;
+                }
+            }
+
+            $order = Order::query()->updateOrCreate(
+                ['order_number' => $orderNumber],
+                $finalData
+            );
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Pesanan berhasil disimpan.',
+                'data' => $order,
+            ], 201);
+
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Order Store Error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Gagal menyimpan pesanan: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
