@@ -25,6 +25,7 @@ class Order extends Model
         'recipient_phone',
         'address_label',
         'address_detail',
+        'address_province',
         'delivery_latitude',
         'delivery_longitude',
         'delivery_datetime',
