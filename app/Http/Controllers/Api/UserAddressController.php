@@ -51,8 +51,13 @@ class UserAddressController extends Controller
             $user->addresses()->update(['is_default' => false]);
         }
 
+        // Filter out fields that might cause "Column not found" if they are null
+        $saveData = array_filter($validated, function ($value) {
+            return $value !== null;
+        });
+
         $address = $user->addresses()->create([
-            ...$validated,
+            ...$saveData,
             'is_default' => $isDefault,
         ]);
 
@@ -100,8 +105,13 @@ class UserAddressController extends Controller
             $request->user()->addresses()->update(['is_default' => false]);
         }
 
+        // Filter out fields that might cause "Column not found" if they are null
+        $saveData = array_filter($validated, function ($value) {
+            return $value !== null;
+        });
+
         $address->update([
-            ...$validated,
+            ...$saveData,
             'is_default' => $isDefault,
         ]);
 
