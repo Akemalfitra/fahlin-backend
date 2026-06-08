@@ -53,7 +53,8 @@ COPY nginx.conf /etc/nginx/nginx.conf
 
 RUN echo '[supervisord]\n\
 nodaemon=true\n\
-user=root\n\
+user=laravel\n\
+pidfile=/run/supervisord.pid\n\
 \n\
 [program:php-fpm]\n\
 command=php-fpm\n\
