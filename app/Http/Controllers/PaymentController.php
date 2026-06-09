@@ -97,8 +97,11 @@ class PaymentController extends Controller
         }
 
         try {
-            $snapToken = \Midtrans\Snap::getSnapToken($params);
-            return response()->json(['snap_token' => $snapToken]);
+            $response = \Midtrans\Snap::createTransaction($params);
+            return response()->json([
+                'snap_token' => $response->token,
+                'redirect_url' => $response->redirect_url,
+            ]);
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500);
         }

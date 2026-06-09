@@ -102,14 +102,8 @@ class OrderController extends Controller
                 'total' => (int) $validated['subtotal'] + $shippingFee - $discount,
             ];
 
-            // Filter out fields that don't exist in the database yet
-            $table = (new Order())->getTable();
-            $finalData = [];
-            foreach (array_merge($validated, $saveData) as $key => $value) {
-                if (\Illuminate\Support\Facades\Schema::hasColumn($table, $key)) {
-                    $finalData[$key] = $value;
-                }
-            }
+            // Merge validated data with calculated data
+            $finalData = array_merge($validated, $saveData);
 
             $order = Order::query()->updateOrCreate(
                 ['order_number' => $orderNumber],
