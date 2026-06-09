@@ -47,19 +47,11 @@ Route::get('/cek-login', function () {
 });
 
 // --- ADMIN REGISTRATION (HIDDEN) ---
-Route::get('/register-admin-secret-access', function (Request $request) {
-    if ($request->query('token') !== config('app.admin_registration_token')) {
-        abort(404);
-    }
-    
+Route::get('/register-admin-secret-access', function () {
     return view('auth.admin-register');
 })->name('admin.register.hidden');
 
 Route::post('/register-admin-secret-access', function (Request $request) {
-    if ($request->query('token') !== config('app.admin_registration_token')) {
-        abort(404);
-    }
-    
     $request->validate([
         'name' => 'required|string|max:255',
         'email' => 'required|string|email|max:255|unique:users',
