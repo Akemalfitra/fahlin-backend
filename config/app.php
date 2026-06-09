@@ -123,4 +123,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'admin_registration_token' => env('ADMIN_REGISTRATION_TOKEN'),
+
 ];

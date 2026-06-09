@@ -28,6 +28,7 @@ class User extends Authenticatable implements FilamentUser
         'firebase_uid',
         'auth_provider',
         'password',
+        'is_admin',
         'is_online',
         'last_seen_at', // Ditambahkan agar bisa diupdate oleh middleware
     ];
@@ -52,6 +53,7 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
             'is_online' => 'boolean',
             'last_seen_at' => 'datetime', // WAJIB: Agar Filament bisa menghitung selisih waktu (Online/Offline)
         ];
@@ -62,7 +64,7 @@ class User extends Authenticatable implements FilamentUser
      */
     public function canAccessPanel(Panel $panel): bool
     {
-        return true;
+        return $this->is_admin === true;
     }
 
     /**
