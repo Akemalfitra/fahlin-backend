@@ -104,4 +104,4 @@ USER $user
 EXPOSE 7860
 
 # PERBAIKAN 2: Menggunakan tautan link standar bawaan Laravel (--force) tanpa flag --relative
-CMD ["/bin/sh", "-c", "php artisan storage:unlink || true; php artisan storage:link --force || true; php artisan config:clear; php artisan route:clear; php artisan view:clear; php artisan config:cache; php artisan migrate:fresh --force; /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
+CMD ["/bin/sh", "-c", "php artisan storage:unlink || true; php artisan storage:link --force || true; php artisan config:clear; php artisan route:clear; php artisan view:clear; php artisan config:cache; php artisan migrate:fresh --force; php artisan db:seed --force; /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.conf"]
