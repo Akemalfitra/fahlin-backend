@@ -45,13 +45,20 @@ class PaymentController extends Controller
                 }
                 $quantity = (int) $item['quantity'];
                 $grossAmount += $product->price * $quantity;
+                $itemName = $selectedImage
+                    ? $product->name . ' - ' . $selectedImage->label
+                    : $product->name;
+                
+                // Midtrans has a 50 character limit for item names
+                if (strlen($itemName) > 50) {
+                    $itemName = substr($itemName, 0, 47) . '...';
+                }
+
                 $itemDetails[] = [
                     'id' => (string) ($selectedImage?->id ?? $product->id),
                     'price' => (int) $product->price,
                     'quantity' => $quantity,
-                    'name' => $selectedImage
-                        ? $product->name . ' - ' . $selectedImage->label
-                        : $product->name,
+                    'name' => $itemName,
                 ];
             }
             $shippingFee = (int) ($validated['shipping_fee'] ?? 0);
